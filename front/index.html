@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
     <title>Atividade de Comparação de Algoritmos de Busca</title>
 </head>
 <body>
-    <input id="fileInput" type="file" multiple />
-    <button id="uploadButton" type="button">Adicionar arquivo(s)</button>
+    <div class="addArquivos">
+        <input id="fileInput" type="file" multiple />
+        <button id="uploadButton" type="button">Adicionar arquivo(s)</button>
 
-    <p id="uploadStatus"></p>
+        <p id="uploadStatus"></p>
+    </div>
+    
 
     <input type="text" placeholder="Digite aqui a(s) palavra(s) que deseja buscar">
     <button>Executar</button>
@@ -36,10 +40,10 @@
             uploadStatus.textContent = 'Enviando arquivo(s)...';
 
             try {
-                const response = await fetch('/upload', {
+                const response = await fetch('http://localhost:3000/upload', {
                     method: 'POST',
                     body: formData
-                });
+                })
 
                 const data = await response.json();
 
@@ -51,6 +55,7 @@
                 uploadStatus.textContent = `${data.message} Arquivos: ${data.files.join(', ')}`;
                 fileInput.value = '';
             } catch (error) {
+                console.error(error);
                 uploadStatus.textContent = 'Erro de conexão ao enviar os arquivos.';
             }
         });

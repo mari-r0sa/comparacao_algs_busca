@@ -1,0 +1,4 @@
+id|nome|email|data_cadastro
+101|João Silva|joao@email.com|2026-03-27
+102|Maria Souza|maria@email.com|2026-03-26
+103|Pedro Alves|pedro@email.com|2026-03-25
