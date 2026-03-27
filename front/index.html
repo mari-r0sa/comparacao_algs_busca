@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade de Comparação de Algoritmos de Busca</title>
+</head>
+<body>
+    <input id="fileInput" type="file" multiple />
+    <button id="uploadButton" type="button">Adicionar arquivo(s)</button>
+
+    <p id="uploadStatus"></p>
+
+    <input type="text" placeholder="Digite aqui a(s) palavra(s) que deseja buscar">
+    <button>Executar</button>
+    <button>Passo a passo</button>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        uploadButton.addEventListener('click', async () => {
+            const files = fileInput.files;
+
+            if (!files || files.length === 0) {
+                uploadStatus.textContent = 'Selecione pelo menos um arquivo antes de enviar.';
+                return;
+            }
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('files', file);
+            }
+
+            uploadStatus.textContent = 'Enviando arquivo(s)...';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    uploadStatus.textContent = data.message || 'Falha ao enviar os arquivos.';
+                    return;
+                }
+
+                uploadStatus.textContent = `${data.message} Arquivos: ${data.files.join(', ')}`;
+                fileInput.value = '';
+            } catch (error) {
+                uploadStatus.textContent = 'Erro de conexão ao enviar os arquivos.';
+            }
+        });
+    </script>
+</body>
+</html>

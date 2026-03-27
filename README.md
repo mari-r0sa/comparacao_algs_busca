@@ -59,7 +59,7 @@ Exemplo:
 SearchStrategy (interface)  ├── NaiveSearch  ├── RabinKarpSearch  ├── KMPSearch  ├── BoyerMooreSearch Interface (sugestão)
 Web (HTML + JS + backend opcional) ou desktop
 
-Elementos:
+## Elementos:
 - Upload de arquivos
 - Input de string
 - Dropdown de algoritmo
