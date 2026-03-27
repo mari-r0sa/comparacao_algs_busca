@@ -3,5 +3,22 @@ body {
     flex-direction: column;
     justify-content: center;
     text-align: center;
+    align-items: center;
     gap: 10px;
+}
+
+.addArquivos {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    width: 70%;
+}
+
+.search {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    width: 70%;
 }

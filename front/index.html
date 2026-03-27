@@ -2,63 +2,99 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca de Algoritmos</title>
     <link rel="stylesheet" href="index.css">
-    <title>Atividade de Comparação de Algoritmos de Busca</title>
 </head>
 <body>
+
     <div class="addArquivos">
         <input id="fileInput" type="file" multiple />
-        <button id="uploadButton" type="button">Adicionar arquivo(s)</button>
-
+        <button id="uploadButton">Adicionar arquivo(s)</button>
         <p id="uploadStatus"></p>
     </div>
-    
 
-    <input type="text" placeholder="Digite aqui a(s) palavra(s) que deseja buscar">
-    <button>Executar</button>
-    <button>Passo a passo</button>
+    <div class="search">
+        <select id="selectAlg">
+            <option value="naive">Naive</option>
+            <option value="kmp">KMP</option>
+            <option value="rabin">Rabin-Karp</option>
+            <option value="boyer">Boyer-Moore</option>
+        </select>
+
+        <input id="searchInput" type="text" placeholder="Buscar...">
+
+        <button id="searchButton">Executar</button>
+    </div>
 
     <script>
         const fileInput = document.getElementById('fileInput');
         const uploadButton = document.getElementById('uploadButton');
         const uploadStatus = document.getElementById('uploadStatus');
+        const searchButton = document.getElementById('searchButton');
+        const searchInput = document.getElementById('searchInput');
+        const selectAlg = document.getElementById('selectAlg');
 
-        uploadButton.addEventListener('click', async () => {
+        let storedFiles = [];
+
+        // UPLOAD (só guarda no front)
+        uploadButton.addEventListener('click', () => {
             const files = fileInput.files;
 
-            if (!files || files.length === 0) {
-                uploadStatus.textContent = 'Selecione pelo menos um arquivo antes de enviar.';
+            if (!files.length) {
+                uploadStatus.textContent = 'Selecione arquivos';
                 return;
             }
 
-            const formData = new FormData();
-            for (const file of files) {
-                formData.append('files', file);
+            storedFiles = Array.from(files);
+
+            uploadStatus.textContent = `${storedFiles.length} arquivo(s) carregado(s)`;
+        });
+
+        // SEARCH
+        searchButton.addEventListener('click', async () => {
+            const pattern = searchInput.value;
+            const algorithm = selectAlg.value;
+
+            if (!pattern) {
+                uploadStatus.textContent = 'Digite algo para buscar';
+                return;
             }
 
-            uploadStatus.textContent = 'Enviando arquivo(s)...';
+            const formData = new FormData(); // ✅ CRIA AQUI PRIMEIRO
+            formData.append('pattern', pattern);
+            formData.append('algorithm', algorithm);
+
+            // se tiver arquivos carregados, envia
+            if (storedFiles.length > 0) {
+                for (const file of storedFiles) {
+                    formData.append('files', file);
+                }
+            }
+
+            uploadStatus.textContent = 'Buscando...';
 
             try {
-                const response = await fetch('http://localhost:3000/upload', {
+                const response = await fetch('http://localhost:3000/search', {
                     method: 'POST',
                     body: formData
-                })
+                });
 
-                const data = await response.json();
+                // 👇 evita erro quando vem HTML (tipo "Cannot POST")
+                const text = await response.text();
 
-                if (!response.ok) {
-                    uploadStatus.textContent = data.message || 'Falha ao enviar os arquivos.';
-                    return;
+                try {
+                    const data = JSON.parse(text);
+                    uploadStatus.textContent = JSON.stringify(data, null, 2);
+                } catch {
+                    uploadStatus.textContent = text; // mostra erro real do servidor
                 }
 
-                uploadStatus.textContent = `${data.message} Arquivos: ${data.files.join(', ')}`;
-                fileInput.value = '';
             } catch (error) {
                 console.error(error);
-                uploadStatus.textContent = 'Erro de conexão ao enviar os arquivos.';
+                uploadStatus.textContent = 'Erro na busca';
             }
         });
     </script>
+
 </body>
 </html>
