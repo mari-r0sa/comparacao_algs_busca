@@ -7,7 +7,9 @@ const path = require('path');
 const app = express();
 app.use(cors());
 
+// CONFIG UPLOAD
 const uploadPath = path.join(__dirname, 'uploads');
+
 if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath);
 }
@@ -23,6 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// UPLOAD
 app.post('/upload', upload.array('files'), (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
@@ -41,10 +44,12 @@ app.post('/upload', upload.array('files'), (req, res) => {
     }
 });
 
+// SEARCH
 app.post('/search', upload.array('files'), (req, res) => {
     try {
         const pattern = req.body.pattern;
         const algorithm = req.body.algorithm;
+        const stepByStep = req.body.stepByStep === 'true';
 
         if (!pattern) {
             return res.status(400).json({ message: 'Informe um padrão para busca.' });
@@ -52,14 +57,14 @@ app.post('/search', upload.array('files'), (req, res) => {
 
         let arquivosParaBuscar = [];
 
-        // 🔥 CASO 1: usuário enviou arquivos
+        // Se enviou arquivos, usa arquivos enviados
         if (req.files && req.files.length > 0) {
             arquivosParaBuscar = req.files.map(file => ({
                 nome: file.originalname,
                 caminho: file.path
             }));
         } 
-        // 🔥 CASO 2: usar arquivos já existentes
+        // Se não, arquivos já salvos
         else {
             const files = fs.readdirSync(uploadPath);
 
@@ -78,6 +83,45 @@ app.post('/search', upload.array('files'), (req, res) => {
         for (const file of arquivosParaBuscar) {
             const content = fs.readFileSync(file.caminho, 'utf-8');
 
+            // Naive Search
+            if (algorithm === 'naive') {
+
+                // Exec passo a passo
+                if (stepByStep) {
+                    const naive = naiveSearchWithLogs(content, pattern);
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: naive.matches.length,
+                        posicoes: naive.matches,
+                        steps: naive.steps,
+                        metrics: naive.metrics
+                    });
+                } 
+                // Exec normal
+                else {
+                    const start = performance.now();
+
+                    const matches = naiveSearch(content, pattern);
+
+                    const end = performance.now();
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: matches.length,
+                        posicoes: matches,
+                        metrics: {
+                            executionTime: (end - start).toFixed(4),
+                            textLength: content.length,
+                            patternLength: pattern.length,
+                            complexity: "O(n * m)"
+                        }
+                    });
+                }
+
+                continue;
+            }
+
             let matches = [];
 
             switch (algorithm) {
@@ -90,8 +134,6 @@ app.post('/search', upload.array('files'), (req, res) => {
                 case 'boyer':
                     matches = boyerMooreSearch(content, pattern);
                     break;
-                default:
-                    matches = naiveSearch(content, pattern);
             }
 
             resultados.push({
@@ -113,6 +155,13 @@ app.post('/search', upload.array('files'), (req, res) => {
     }
 });
 
+/* ===========================================================================================
+NAIVE SEARCH
+- Tenta encaixar o 'pattern' em todas as posições do código e verifica se dá match ou não.
+- Para cada i, compara caractere por caractere (j) e, se não der match, avança uma posição
+============================================================================================== */
+
+// NAIVE NORMAL
 function naiveSearch(text, pattern) {
     const result = [];
 
@@ -127,6 +176,71 @@ function naiveSearch(text, pattern) {
     }
 
     return result;
+}
+
+// NAIVE PASSO A PASSO
+function naiveSearchWithLogs(text, pattern) {
+    const result = [];
+    const steps = [];
+
+    let comparisons = 0;
+
+    const startTime = performance.now();
+
+    for (let i = 0; i <= text.length - pattern.length; i++) {
+
+        steps.push(`\n[SHIFT] i = ${i}`);
+
+        let j = 0;
+
+        while (j < pattern.length) {
+            comparisons++;
+
+            steps.push(
+                `Comparando text[${i + j}] = '${text[i + j]}' com pattern[${j}] = '${pattern[j]}'`
+            );
+
+            if (text[i + j] !== pattern[j]) {
+                steps.push(`Mismatch`);
+
+                if (j != 0) {
+                    steps.push(`Voltando ao primeiro caractere de comparação`);   
+                    steps.push(`===================================================`)
+                } 
+
+                break;
+            }
+
+            steps.push(`Match!`);
+            if (j != pattern.length - 1) {
+                steps.push(`Alterando caractere de comparação...`)
+                steps.push(`===================================================`)
+            }
+            
+            j++;
+        }
+
+        if (j === pattern.length) {
+            steps.push(`Encontrado na posição ${i}`);
+            steps.push(`Buscando outra ocorrência...`)
+            steps.push(`===================================================`)
+            result.push(i);
+        }
+    }
+
+    const endTime = performance.now();
+
+    return {
+        matches: result,
+        steps,
+        metrics: {
+            comparisons,
+            executionTime: (endTime - startTime).toFixed(4),
+            textLength: text.length,
+            patternLength: pattern.length,
+            complexity: "O(n * m)"
+        }
+    };
 }
 
 function buildLPS(pattern) {
@@ -180,5 +294,5 @@ function kmpSearch(text, pattern) {
 }
 
 app.listen(3000, () => {
-    console.log('🚀 Servidor rodando em http://localhost:3000');
+    console.log('Servidor rodando em http://localhost:3000');
 });

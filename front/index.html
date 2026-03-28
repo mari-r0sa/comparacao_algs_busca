@@ -24,6 +24,7 @@
         <input id="searchInput" type="text" placeholder="Buscar...">
 
         <button id="searchButton">Executar</button>
+        <button id="stepButton">Passo a passo</button>
     </div>
 
     <script>
@@ -33,10 +34,11 @@
         const searchButton = document.getElementById('searchButton');
         const searchInput = document.getElementById('searchInput');
         const selectAlg = document.getElementById('selectAlg');
-
+        const stepButton = document.getElementById('stepButton');
+        
         let storedFiles = [];
 
-        // UPLOAD (só guarda no front)
+        // UPLOAD
         uploadButton.addEventListener('click', () => {
             const files = fileInput.files;
 
@@ -51,7 +53,15 @@
         });
 
         // SEARCH
-        searchButton.addEventListener('click', async () => {
+        searchButton.addEventListener('click', () => {
+            executarBusca(false);
+        });
+
+        stepButton.addEventListener('click', () => {
+            executarBusca(true);
+        });
+
+        async function executarBusca(stepByStep) {
             const pattern = searchInput.value;
             const algorithm = selectAlg.value;
 
@@ -60,18 +70,18 @@
                 return;
             }
 
-            const formData = new FormData(); // ✅ CRIA AQUI PRIMEIRO
+            const formData = new FormData();
             formData.append('pattern', pattern);
             formData.append('algorithm', algorithm);
+            formData.append('stepByStep', stepByStep);
 
-            // se tiver arquivos carregados, envia
             if (storedFiles.length > 0) {
                 for (const file of storedFiles) {
                     formData.append('files', file);
                 }
             }
 
-            uploadStatus.textContent = 'Buscando...';
+            uploadStatus.textContent = stepByStep ? 'Executando passo a passo...' : 'Executando...';
 
             try {
                 const response = await fetch('http://localhost:3000/search', {
@@ -79,21 +89,36 @@
                     body: formData
                 });
 
-                // 👇 evita erro quando vem HTML (tipo "Cannot POST")
-                const text = await response.text();
+                const data = await response.json();
 
-                try {
-                    const data = JSON.parse(text);
-                    uploadStatus.textContent = JSON.stringify(data, null, 2);
-                } catch {
-                    uploadStatus.textContent = text; // mostra erro real do servidor
-                }
+                let output = "";
+
+                data.resultados.forEach(r => {
+                    output += `\n- Arquivo: ${r.arquivo}\n`;
+                    output += `Ocorrências: ${r.ocorrencias}\n`;
+                    output += `Posições: ${r.posicoes.join(", ")}\n`;
+
+                    output += `\n- Métricas:\n`;
+                    output += `Tempo: ${r.metrics.executionTime} ms\n`;
+                    output += `Texto: ${r.metrics.textLength}\n`;
+                    output += `Padrão: ${r.metrics.patternLength}\n`;
+                    output += `Complexidade: ${r.metrics.complexity}\n`;
+
+                    // Só mostra se for passo a passo
+                    if (stepByStep && r.steps) {
+                        output += `\n- Passo a passo:\n`;
+                        output += r.steps.join("\n");
+                    }
+
+                });
+
+                uploadStatus.innerText = output;
 
             } catch (error) {
                 console.error(error);
                 uploadStatus.textContent = 'Erro na busca';
             }
-        });
+        }
     </script>
 
 </body>
