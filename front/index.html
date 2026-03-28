@@ -93,10 +93,16 @@
 
                 let output = "Log de execução\n\n";
 
+                if (!data.resultados) {
+                    uploadStatus.innerText = JSON.stringify(data, null, 2);
+                    return;
+                }
+
                 data.resultados.forEach(r => {
                     output += `\n- Arquivo: ${r.arquivo}\n`;
                     output += `Ocorrências: ${r.ocorrencias}\n`;
                     output += `Posições: ${r.posicoes.join(", ")}\n`;
+                    output += `Comparações: ${r.metrics.comparisons}\n`;
 
                     output += `\n- Métricas:\n`;
                     output += `Tempo: ${r.metrics.executionTime} ms\n`;

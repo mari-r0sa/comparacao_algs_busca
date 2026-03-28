@@ -81,77 +81,78 @@ app.post('/search', upload.array('files'), (req, res) => {
         const resultados = [];
 
         for (const file of arquivosParaBuscar) {
-            const content = fs.readFileSync(file.caminho, 'utf-8');
+            const text = fs.readFileSync(file.caminho, 'utf-8');
 
-            switch (algorithm) {
-                case 'naive':
-                    // Exec passo a passo
-                    if (stepByStep) {
-                        const naive = naiveSearchWithLogs(content, pattern);
+            // ================= NAIVE =================
+            if (algorithm === 'naive') {
 
-                        resultados.push({
-                            arquivo: file.nome,
-                            ocorrencias: naive.matches.length,
-                            posicoes: naive.matches,
-                            steps: naive.steps,
-                            metrics: naive.metrics
-                        });
-                    } 
-                    // Exec normal
-                    else {
-                        const start = performance.now();
+                if (stepByStep) {
+                    const r = naiveSearchWithLogs(text, pattern);
 
-                        const matches = naiveSearch(content, pattern);
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        steps: r.steps,
+                        metrics: r.metrics
+                    });
 
-                        const end = performance.now();
+                } else {
+                    const start = performance.now();
+                    const r = naiveSearch(text, pattern);
+                    const end = performance.now();
 
-                        resultados.push({
-                            arquivo: file.nome,
-                            ocorrencias: matches.length,
-                            posicoes: matches,
-                            metrics: {
-                                executionTime: (end - start).toFixed(4),
-                                textLength: content.length,
-                                patternLength: pattern.length,
-                                complexity: "O(n * m)"
-                            }
-                        });
-                    }
-
-                    continue;
-                    case 'rabin':
-                        if (stepByStep) {
-                            const rk = rabinKarpSearchWithLogs(content, pattern);
-
-                            resultados.push({
-                                arquivo: file.nome,
-                                ocorrencias: rk.matches.length,
-                                posicoes: rk.matches,
-                                steps: rk.steps,
-                                metrics: rk.metrics
-                            });
-
-                        } else {
-                            const start = performance.now();
-
-                            const matches = rabinKarpSearch(content, pattern);
-
-                            const end = performance.now();
-
-                            resultados.push({
-                                arquivo: file.nome,
-                                ocorrencias: matches.length,
-                                posicoes: matches,
-                                metrics: {
-                                    executionTime: (end - start).toFixed(4),
-                                    textLength: content.length,
-                                    patternLength: pattern.length,
-                                    complexity: "O(n + m)"
-                                }
-                            });
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        metrics: {
+                            comparisons: r.comparisons,
+                            executionTime: (end - start).toFixed(4),
+                            textLength: text.length,
+                            patternLength: pattern.length,
+                            complexity: "O(n * m)"
                         }
+                    });
+                }
 
-                        continue;
+                continue;
+            }
+
+            // ================= RABIN-KARP =================
+            if (algorithm === 'rabin') {
+
+                if (stepByStep) {
+                    const r = rabinKarpSearchWithLogs(text, pattern);
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        steps: r.steps,
+                        metrics: r.metrics
+                    });
+
+                } else {
+                    const start = performance.now();
+                    const r = rabinKarpSearch(text, pattern);
+                    const end = performance.now();
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        metrics: {
+                            comparisons: r.comparisons,
+                            executionTime: (end - start).toFixed(4),
+                            textLength: text.length,
+                            patternLength: pattern.length,
+                            complexity: "O(n + m)"
+                        }
+                    });
+                }
+
+                continue;
             }
         }
 
@@ -176,18 +177,23 @@ NAIVE SEARCH
 // NAIVE NORMAL
 function naiveSearch(text, pattern) {
     const result = [];
+    let comparisons = 0;
 
     for (let i = 0; i <= text.length - pattern.length; i++) {
         let j = 0;
 
-        while (j < pattern.length && text[i + j] === pattern[j]) {
+        while (j < pattern.length) {
+            comparisons++;
+
+            if (text[i + j] !== pattern[j]) break;
+
             j++;
         }
 
         if (j === pattern.length) result.push(i);
     }
 
-    return result;
+    return { matches: result, comparisons };
 }
 
 // NAIVE PASSO A PASSO
@@ -273,6 +279,7 @@ CDE -> terceira
 
 function rabinKarpSearch(text, pattern) {
     const result = [];
+    let comparisons = 0;
 
     const d = 256; // Número de caracteres possíveis
     const q = 101; // Número primo para evitar colisões
@@ -286,9 +293,8 @@ function rabinKarpSearch(text, pattern) {
 
     // h = pow(d, m-1) % q
     // Representa o 'peso' do primeiro caractere. Usado para removê-lo quando a janela desliza
-    for (let i = 0; i < m - 1; i++) {
+    for (let i = 0; i < m - 1; i++) 
         h = (h * d) % q;
-    }
 
     // hash inicial
     for (let i = 0; i < m; i++) {
@@ -302,6 +308,7 @@ function rabinKarpSearch(text, pattern) {
             let match = true;
 
             for (let j = 0; j < m; j++) {
+                comparisons++;
                 if (text[i + j] !== pattern[j]) {
                     match = false;
                     break;
@@ -314,12 +321,11 @@ function rabinKarpSearch(text, pattern) {
         // recalcula hash
         if (i < n - m) {
             t = (d * (t - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
-
             if (t < 0) t += q;
         }
     }
 
-    return result;
+    return { matches: result, comparisons };
 }
 
 function rabinKarpSearchWithLogs(text, pattern) {
