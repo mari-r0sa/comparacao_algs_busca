@@ -91,7 +91,7 @@
 
                 const data = await response.json();
 
-                let output = "";
+                let output = "Log de execução\n\n";
 
                 data.resultados.forEach(r => {
                     output += `\n- Arquivo: ${r.arquivo}\n`;

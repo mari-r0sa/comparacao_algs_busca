@@ -83,64 +83,76 @@ app.post('/search', upload.array('files'), (req, res) => {
         for (const file of arquivosParaBuscar) {
             const content = fs.readFileSync(file.caminho, 'utf-8');
 
-            // Naive Search
-            if (algorithm === 'naive') {
-
-                // Exec passo a passo
-                if (stepByStep) {
-                    const naive = naiveSearchWithLogs(content, pattern);
-
-                    resultados.push({
-                        arquivo: file.nome,
-                        ocorrencias: naive.matches.length,
-                        posicoes: naive.matches,
-                        steps: naive.steps,
-                        metrics: naive.metrics
-                    });
-                } 
-                // Exec normal
-                else {
-                    const start = performance.now();
-
-                    const matches = naiveSearch(content, pattern);
-
-                    const end = performance.now();
-
-                    resultados.push({
-                        arquivo: file.nome,
-                        ocorrencias: matches.length,
-                        posicoes: matches,
-                        metrics: {
-                            executionTime: (end - start).toFixed(4),
-                            textLength: content.length,
-                            patternLength: pattern.length,
-                            complexity: "O(n * m)"
-                        }
-                    });
-                }
-
-                continue;
-            }
-
-            let matches = [];
-
             switch (algorithm) {
-                case 'kmp':
-                    matches = kmpSearch(content, pattern);
-                    break;
-                case 'rabin':
-                    matches = rabinKarpSearch(content, pattern);
-                    break;
-                case 'boyer':
-                    matches = boyerMooreSearch(content, pattern);
-                    break;
-            }
+                case 'naive':
+                    // Exec passo a passo
+                    if (stepByStep) {
+                        const naive = naiveSearchWithLogs(content, pattern);
 
-            resultados.push({
-                arquivo: file.nome,
-                ocorrencias: matches.length,
-                posicoes: matches
-            });
+                        resultados.push({
+                            arquivo: file.nome,
+                            ocorrencias: naive.matches.length,
+                            posicoes: naive.matches,
+                            steps: naive.steps,
+                            metrics: naive.metrics
+                        });
+                    } 
+                    // Exec normal
+                    else {
+                        const start = performance.now();
+
+                        const matches = naiveSearch(content, pattern);
+
+                        const end = performance.now();
+
+                        resultados.push({
+                            arquivo: file.nome,
+                            ocorrencias: matches.length,
+                            posicoes: matches,
+                            metrics: {
+                                executionTime: (end - start).toFixed(4),
+                                textLength: content.length,
+                                patternLength: pattern.length,
+                                complexity: "O(n * m)"
+                            }
+                        });
+                    }
+
+                    continue;
+                    case 'rabin':
+                        if (stepByStep) {
+                            const rk = rabinKarpSearchWithLogs(content, pattern);
+
+                            resultados.push({
+                                arquivo: file.nome,
+                                ocorrencias: rk.matches.length,
+                                posicoes: rk.matches,
+                                steps: rk.steps,
+                                metrics: rk.metrics
+                            });
+
+                        } else {
+                            const start = performance.now();
+
+                            const matches = rabinKarpSearch(content, pattern);
+
+                            const end = performance.now();
+
+                            resultados.push({
+                                arquivo: file.nome,
+                                ocorrencias: matches.length,
+                                posicoes: matches,
+                                metrics: {
+                                    executionTime: (end - start).toFixed(4),
+                                    textLength: content.length,
+                                    patternLength: pattern.length,
+                                    complexity: "O(n + m)"
+                                }
+                            });
+                        }
+
+                        continue;
+            }
         }
 
         res.json({
@@ -243,54 +255,169 @@ function naiveSearchWithLogs(text, pattern) {
     };
 }
 
-function buildLPS(pattern) {
-    const lps = Array(pattern.length).fill(0);
-    let len = 0;
-    let i = 1;
+/* ===========================================================================================
+RABIN-KARP
+- Usa hash em vez de comparar caractere por caractere o tempo todo, ou seja, compara números em vez de strings.
+- Calcula hash do padrão -> Calcula hash do primeiro "trecho" do texto -> Se forem iguais, compara de novo pra garantir e vê se dá match.
+- Conceito importante: 'rolling hash' -> ele compara "janelas" de texto, ou seja, em vez de comparar de 1 em 1, compara a qtd de caracteres do padrão buscado
+  e, para passar para a próxima sem recalcular o hash do zero, ele remove o primeiro caractere e adiciona o próximo no final.
+- Ex: 
+Texto:   ABCDE
+Padrão:  ABC
 
-    while (i < pattern.length) {
-        if (pattern[i] === pattern[len]) {
-            len++;
-            lps[i] = len;
-            i++;
-        } else {
-            if (len !== 0) {
-                len = lps[len - 1];
-            } else {
-                lps[i] = 0;
-                i++;
-            }
-        }
-    }
+Comparações:
+ABC -> primeira janela
+BCD -> segunda
+CDE -> terceira
+============================================================================================== */
 
-    return lps;
-}
-
-function kmpSearch(text, pattern) {
-    const lps = buildLPS(pattern);
+function rabinKarpSearch(text, pattern) {
     const result = [];
 
-    let i = 0, j = 0;
+    const d = 256; // Número de caracteres possíveis
+    const q = 101; // Número primo para evitar colisões
 
-    while (i < text.length) {
-        if (text[i] === pattern[j]) {
-            i++;
-            j++;
+    const m = pattern.length; // Tamanho do padrão
+    const n = text.length; // Tamanho do texto
+
+    let p = 0; // hash do pattern
+    let t = 0; // hash da janela
+    let h = 1; 
+
+    // h = pow(d, m-1) % q
+    // Representa o 'peso' do primeiro caractere. Usado para removê-lo quando a janela desliza
+    for (let i = 0; i < m - 1; i++) {
+        h = (h * d) % q;
+    }
+
+    // hash inicial
+    for (let i = 0; i < m; i++) {
+        p = (d * p + pattern.charCodeAt(i)) % q;
+        t = (d * t + text.charCodeAt(i)) % q;
+    }
+
+    for (let i = 0; i <= n - m; i++) {
+
+        if (p === t) {
+            let match = true;
+
+            for (let j = 0; j < m; j++) {
+                if (text[i + j] !== pattern[j]) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) result.push(i);
         }
 
-        if (j === pattern.length) {
-            result.push(i - j);
-            j = lps[j - 1];
-        } else if (i < text.length && text[i] !== pattern[j]) {
-            if (j !== 0) {
-                j = lps[j - 1];
-            } else {
-                i++;
-            }
+        // recalcula hash
+        if (i < n - m) {
+            t = (d * (t - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
+
+            if (t < 0) t += q;
         }
     }
 
     return result;
+}
+
+function rabinKarpSearchWithLogs(text, pattern) {
+    const result = [];
+    const steps = [];
+
+    const d = 256; // Número de caracteres possíveis
+    const q = 101; // Número primo para evitar colisões
+
+    const m = pattern.length; // Tamanho do padrão
+    const n = text.length; // Tamanho do texto
+
+    let p = 0;
+    let t = 0;
+    let h = 1; // Representa o 'peso' do primeiro caractere. Usado para removê-lo quando a janela desliza
+
+    let comparisons = 0;
+
+    const startTime = performance.now();
+
+    steps.push(`Calculando h (d^(m-1) % q)`);
+
+    for (let i = 0; i < m - 1; i++) {
+        h = (h * d) % q;
+    }
+
+    steps.push(`h = ${h}`);
+
+    steps.push(`Calculando hash inicial`);
+
+    for (let i = 0; i < m; i++) {
+        p = (d * p + pattern.charCodeAt(i)) % q;
+        t = (d * t + text.charCodeAt(i)) % q;
+    }
+
+    steps.push(`Hash pattern = ${p}`);
+    steps.push(`Hash inicial texto = ${t}`);
+
+    for (let i = 0; i <= n - m; i++) {
+
+        steps.push(`\n[SHIFT] i = ${i}`);
+
+        if (p === t) {
+            steps.push(`Match de Hash  -> verificando caracteres`);
+
+            let match = true;
+
+            for (let j = 0; j < m; j++) {
+                comparisons++;
+
+                steps.push(
+                    `Comparando text[${i + j}] = '${text[i + j]}' com pattern[${j}]`
+                );
+
+                if (text[i + j] !== pattern[j]) {
+                    steps.push(`Colisão de hash -> Falso positivo)`);
+                    steps.push(`==================================`)
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                steps.push(`Match confirmado na posição ${i}`);
+                steps.push(`Buscando outras ocorrências...`)
+                steps.push(`==================================`)
+                result.push(i);
+            }
+
+        } else {
+            steps.push(`Mismatch de Hash -> pula comparação`);
+            steps.push(`==================================`)
+        }
+
+        if (i < n - m) {
+            const oldHash = t;
+
+            t = (d * (t - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
+
+            if (t < 0) t += q;
+
+            steps.push(`Rolling hash: de ${oldHash} para ${t}`);
+        }
+    }
+
+    const endTime = performance.now();
+
+    return {
+        matches: result,
+        steps,
+        metrics: {
+            comparisons,
+            executionTime: (endTime - startTime).toFixed(4),
+            textLength: n,
+            patternLength: m,
+            complexity: "O(n + m) (médio)"
+        }
+    };
 }
 
 app.listen(3000, () => {
