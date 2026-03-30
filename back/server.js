@@ -1,3 +1,4 @@
+const { performance } = require('perf_hooks');
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -154,6 +155,78 @@ app.post('/search', upload.array('files'), (req, res) => {
 
                 continue;
             }
+
+            // ================= KMP =================
+            if (algorithm === 'kmp') {
+
+                if (stepByStep) {
+                    const r = kmpSearchWithLogs(text, pattern);
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        steps: r.steps,
+                        metrics: r.metrics
+                    });
+
+                } else {
+                    const start = performance.now();
+                    const r = kmpSearch(text, pattern);
+                    const end = performance.now();
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        metrics: {
+                            comparisons: r.comparisons,
+                            executionTime: (end - start).toFixed(4),
+                            textLength: text.length,
+                            patternLength: pattern.length,
+                            complexity: "O(n + m)"
+                        }
+                    });
+                }
+
+                continue;
+            }
+
+            // ================= BOYER-MOORE =================
+            if (algorithm === 'boyer') {
+
+                if (stepByStep) {
+                    const r = boyerMooreSearchWithLogs(text, pattern);
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        steps: r.steps,
+                        metrics: r.metrics
+                    });
+
+                } else {
+                    const start = performance.now();
+                    const r = boyerMooreSearch(text, pattern);
+                    const end = performance.now();
+
+                    resultados.push({
+                        arquivo: file.nome,
+                        ocorrencias: r.matches.length,
+                        posicoes: r.matches,
+                        metrics: {
+                            comparisons: r.comparisons,
+                            executionTime: (end - start).toFixed(4),
+                            textLength: text.length,
+                            patternLength: pattern.length,
+                            complexity: "O(n / m) (melhor caso)"
+                        }
+                    });
+                }
+
+                continue;
+            }
         }
 
         res.json({
@@ -223,7 +296,7 @@ function naiveSearchWithLogs(text, pattern) {
 
                 if (j != 0) {
                     steps.push(`Voltando ao primeiro caractere de comparação`);   
-                    steps.push(`===================================================`)
+                    steps.push(`===================================================`);
                 } 
 
                 break;
@@ -231,8 +304,8 @@ function naiveSearchWithLogs(text, pattern) {
 
             steps.push(`Match!`);
             if (j != pattern.length - 1) {
-                steps.push(`Alterando caractere de comparação...`)
-                steps.push(`===================================================`)
+                steps.push(`Alterando caractere de comparação...`);
+                steps.push(`===================================================`);
             }
             
             j++;
@@ -240,8 +313,8 @@ function naiveSearchWithLogs(text, pattern) {
 
         if (j === pattern.length) {
             steps.push(`Encontrado na posição ${i}`);
-            steps.push(`Buscando outra ocorrência...`)
-            steps.push(`===================================================`)
+            steps.push(`Buscando outra ocorrência...`);
+            steps.push(`===================================================`);
             result.push(i);
         }
     }
@@ -291,12 +364,9 @@ function rabinKarpSearch(text, pattern) {
     let t = 0; // hash da janela
     let h = 1; 
 
-    // h = pow(d, m-1) % q
-    // Representa o 'peso' do primeiro caractere. Usado para removê-lo quando a janela desliza
     for (let i = 0; i < m - 1; i++) 
         h = (h * d) % q;
 
-    // hash inicial
     for (let i = 0; i < m; i++) {
         p = (d * p + pattern.charCodeAt(i)) % q;
         t = (d * t + text.charCodeAt(i)) % q;
@@ -318,7 +388,6 @@ function rabinKarpSearch(text, pattern) {
             if (match) result.push(i);
         }
 
-        // recalcula hash
         if (i < n - m) {
             t = (d * (t - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
             if (t < 0) t += q;
@@ -332,15 +401,15 @@ function rabinKarpSearchWithLogs(text, pattern) {
     const result = [];
     const steps = [];
 
-    const d = 256; // Número de caracteres possíveis
-    const q = 101; // Número primo para evitar colisões
+    const d = 256;
+    const q = 101;
 
-    const m = pattern.length; // Tamanho do padrão
-    const n = text.length; // Tamanho do texto
+    const m = pattern.length;
+    const n = text.length;
 
     let p = 0;
     let t = 0;
-    let h = 1; // Representa o 'peso' do primeiro caractere. Usado para removê-lo quando a janela desliza
+    let h = 1;
 
     let comparisons = 0;
 
@@ -382,7 +451,7 @@ function rabinKarpSearchWithLogs(text, pattern) {
 
                 if (text[i + j] !== pattern[j]) {
                     steps.push(`Colisão de hash -> Falso positivo)`);
-                    steps.push(`==================================`)
+                    steps.push(`==================================`);
                     match = false;
                     break;
                 }
@@ -390,14 +459,14 @@ function rabinKarpSearchWithLogs(text, pattern) {
 
             if (match) {
                 steps.push(`Match confirmado na posição ${i}`);
-                steps.push(`Buscando outras ocorrências...`)
-                steps.push(`==================================`)
+                steps.push(`Buscando outras ocorrências...`);
+                steps.push(`==================================`);
                 result.push(i);
             }
 
         } else {
             steps.push(`Mismatch de Hash -> pula comparação`);
-            steps.push(`==================================`)
+            steps.push(`==================================`);
         }
 
         if (i < n - m) {
@@ -422,6 +491,230 @@ function rabinKarpSearchWithLogs(text, pattern) {
             textLength: n,
             patternLength: m,
             complexity: "O(n + m) (médio)"
+        }
+    };
+}
+
+/* ===========================================================================================
+KMP
+- Usa a tabela LPS para evitar comparações repetidas
+============================================================================================== */
+
+function buildLPS(pattern) {
+    const lps = new Array(pattern.length).fill(0);
+    let length = 0;
+    let i = 1;
+
+    while (i < pattern.length) {
+        if (pattern[i] === pattern[length]) {
+            length++;
+            lps[i] = length;
+            i++;
+        } else {
+            if (length !== 0) {
+                length = lps[length - 1];
+            } else {
+                lps[i] = 0;
+                i++;
+            }
+        }
+    }
+
+    return lps;
+}
+
+function kmpSearch(text, pattern) {
+    const result = [];
+    let comparisons = 0;
+
+    const lps = buildLPS(pattern);
+
+    let i = 0;
+    let j = 0;
+
+    while (i < text.length) {
+        comparisons++;
+
+        if (text[i] === pattern[j]) {
+            i++;
+            j++;
+        }
+
+        if (j === pattern.length) {
+            result.push(i - j);
+            j = lps[j - 1];
+        } else if (i < text.length && text[i] !== pattern[j]) {
+            if (j !== 0) {
+                j = lps[j - 1];
+            } else {
+                i++;
+            }
+        }
+    }
+
+    return { matches: result, comparisons, lps };
+}
+
+function kmpSearchWithLogs(text, pattern) {
+    const steps = [];
+    const result = [];
+
+    const lps = buildLPS(pattern);
+
+    steps.push(`Tabela LPS: ${lps.join(", ")}`);
+
+    let i = 0;
+    let j = 0;
+    let comparisons = 0;
+
+    const startTime = performance.now();
+
+    while (i < text.length) {
+        comparisons++;
+
+        steps.push(`Comparando text[${i}] = '${text[i]}' com pattern[${j}]`);
+
+        if (text[i] === pattern[j]) {
+            steps.push("Match");
+            i++;
+            j++;
+        }
+
+        if (j === pattern.length) {
+            steps.push(`Encontrado na posição ${i - j}`);
+            result.push(i - j);
+            j = lps[j - 1];
+        } else if (i < text.length && text[i] !== pattern[j]) {
+            steps.push("Mismatch");
+
+            if (j !== 0) {
+                const oldJ = j;
+                j = lps[j - 1];
+                steps.push(`Usando LPS: j ${oldJ} -> ${j}`);
+            } else {
+                i++;
+            }
+        }
+    }
+
+    const endTime = performance.now();
+
+    return {
+        matches: result,
+        steps,
+        metrics: {
+            comparisons,
+            executionTime: (endTime - startTime).toFixed(4),
+            textLength: text.length,
+            patternLength: pattern.length,
+            complexity: "O(n + m)"
+        }
+    };
+}
+
+/* ===========================================================================================
+BOYER-MOORE
+- Usa a tabela bad character para dar saltos maiores no texto
+============================================================================================== */
+
+function buildBadCharTable(pattern) {
+    const table = {};
+    for (let i = 0; i < pattern.length; i++) {
+        table[pattern[i]] = i;
+    }
+    return table;
+}
+
+function boyerMooreSearch(text, pattern) {
+    const result = [];
+    let comparisons = 0;
+
+    const badChar = buildBadCharTable(pattern);
+
+    let shift = 0;
+
+    while (shift <= text.length - pattern.length) {
+        let j = pattern.length - 1;
+
+        while (j >= 0) {
+            comparisons++;
+            if (pattern[j] !== text[shift + j]) break;
+            j--;
+        }
+
+        if (j < 0) {
+            result.push(shift);
+
+            shift += (shift + pattern.length < text.length)
+                ? pattern.length - (badChar[text[shift + pattern.length]] ?? -1)
+                : 1;
+        } else {
+            shift += Math.max(1, j - (badChar[text[shift + j]] ?? -1));
+        }
+    }
+
+    return { matches: result, comparisons, badChar };
+}
+
+function boyerMooreSearchWithLogs(text, pattern) {
+    const result = [];
+    const steps = [];
+
+    const badChar = buildBadCharTable(pattern);
+
+    steps.push(`Tabela Bad Character: ${JSON.stringify(badChar)}`);
+
+    let shift = 0;
+    let comparisons = 0;
+
+    const startTime = performance.now();
+
+    while (shift <= text.length - pattern.length) {
+        steps.push(`\n[SHIFT] ${shift}`);
+
+        let j = pattern.length - 1;
+
+        while (j >= 0) {
+            comparisons++;
+
+            steps.push(
+                `Comparando text[${shift + j}] = '${text[shift + j]}' com pattern[${j}]`
+            );
+
+            if (pattern[j] !== text[shift + j]) {
+                steps.push("Mismatch");
+                break;
+            }
+
+            j--;
+        }
+
+        if (j < 0) {
+            steps.push(`Encontrado na posição ${shift}`);
+            result.push(shift);
+
+            shift += (shift + pattern.length < text.length)
+                ? pattern.length - (badChar[text[shift + pattern.length]] ?? -1)
+                : 1;
+        } else {
+            const shiftAmount = Math.max(1, j - (badChar[text[shift + j]] ?? -1));
+
+            steps.push(`Deslocando ${shiftAmount}`);
+            shift += shiftAmount;
+        }
+    }
+
+    const endTime = performance.now();
+
+    return {
+        matches: result,
+        steps,
+        metrics: {
+            comparisons,
+            executionTime: (endTime - startTime).toFixed(4),
+            textLength: text.length,
+            patternLength: pattern.length,
+            complexity: "O(n / m) (melhor caso)"
         }
     };
 }

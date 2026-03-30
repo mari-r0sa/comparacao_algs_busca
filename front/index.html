@@ -9,7 +9,7 @@
 
     <div class="addArquivos">
         <input id="fileInput" type="file" multiple />
-        <button id="uploadButton">Adicionar arquivo(s)</button>
+        <button type="button" id="uploadButton">Adicionar arquivo(s)</button>
         <p id="uploadStatus"></p>
     </div>
 
@@ -23,8 +23,8 @@
 
         <input id="searchInput" type="text" placeholder="Buscar...">
 
-        <button id="searchButton">Executar</button>
-        <button id="stepButton">Passo a passo</button>
+        <button type="button" id="searchButton">Executar</button>
+        <button type="button" id="stepButton">Passo a passo</button>
     </div>
 
     <script>
@@ -39,7 +39,9 @@
         let storedFiles = [];
 
         // UPLOAD
-        uploadButton.addEventListener('click', () => {
+        uploadButton.addEventListener('click', (event) => {
+            event.preventDefault();
+
             const files = fileInput.files;
 
             if (!files.length) {
@@ -53,11 +55,13 @@
         });
 
         // SEARCH
-        searchButton.addEventListener('click', () => {
+        searchButton.addEventListener('click', (event) => {
+            event.preventDefault();
             executarBusca(false);
         });
 
-        stepButton.addEventListener('click', () => {
+        stepButton.addEventListener('click', (event) => {
+            event.preventDefault();
             executarBusca(true);
         });
 
@@ -101,7 +105,7 @@
                 data.resultados.forEach(r => {
                     output += `\n- Arquivo: ${r.arquivo}\n`;
                     output += `Ocorrências: ${r.ocorrencias}\n`;
-                    output += `Posições: ${r.posicoes.join(", ")}\n`;
+                    output += `Posições: ${r.posicoes.length ? r.posicoes.join(", ") : "Nenhuma ocorrência encontrada"}\n`;
                     output += `Comparações: ${r.metrics.comparisons}\n`;
 
                     output += `\n- Métricas:\n`;
@@ -110,12 +114,12 @@
                     output += `Padrão: ${r.metrics.patternLength}\n`;
                     output += `Complexidade: ${r.metrics.complexity}\n`;
 
-                    // Só mostra se for passo a passo
                     if (stepByStep && r.steps) {
                         output += `\n- Passo a passo:\n`;
                         output += r.steps.join("\n");
                     }
 
+                    output += `\n\n============================================\n`;
                 });
 
                 uploadStatus.innerText = output;
