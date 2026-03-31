@@ -1,0 +1,90 @@
+2026-03-31T00:11:22.246Z [LOG] info: 
+========== ARQUIVO: exemplo1.txt ==========
+
+2026-03-31T00:11:22.247Z [LOG] info: 
+========== NAIVE SEARCH ==========
+
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 0
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[0]='A' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✔ Match
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[1]='B' com pattern[1]='B'
+2026-03-31T00:11:22.247Z [LOG] info: ✔ Match
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[2]='C' com pattern[2]='C'
+2026-03-31T00:11:22.247Z [LOG] info: ✔ Match
+2026-03-31T00:11:22.247Z [LOG] info: ✔ Encontrado na posição 0
+2026-03-31T00:11:22.247Z [LOG] info: ----------------------------------------
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 1
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[1]='B' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 2
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[2]='C' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 3
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[3]='D' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 4
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[4]='E' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 5
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[5]='F' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 6
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[6]='G' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 7
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[7]='H' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 8
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[8]='I' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 9
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[9]='J' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 10
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[10]='K' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 11
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[11]='L' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 12
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[12]='M' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 13
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[13]='N' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 14
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[14]='O' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 15
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[15]='P' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 16
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[16]='Q' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 17
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[17]='R' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 18
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[18]='S' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 19
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[19]='T' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 20
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[20]='U' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 21
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[21]='V' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.247Z [LOG] info: → [SHIFT] i = 22
+2026-03-31T00:11:22.247Z [LOG] info: Comparando text[22]='W' com pattern[0]='A'
+2026-03-31T00:11:22.247Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.248Z [LOG] info: → [SHIFT] i = 23
+2026-03-31T00:11:22.248Z [LOG] info: Comparando text[23]='X' com pattern[0]='A'
+2026-03-31T00:11:22.248Z [LOG] info: ✖ Mismatch
+2026-03-31T00:11:22.248Z [LOG] info: 
+========== RESULTADO ==========
+
+2026-03-31T00:11:22.248Z [LOG] info: Matches: 0
+2026-03-31T00:11:22.248Z [LOG] info: Tempo: 0.9461 ms
+2026-03-31T00:11:22.248Z [LOG] info: Comparações: 26

@@ -1,12 +1,69 @@
 const { performance } = require('perf_hooks');
 const express = require('express');
 const multer = require('multer');
+const winston = require('winston');
 const cors = require('cors');
-const fs = require('fs');
+const { combine, timestamp, label, printf } = winston.format;const fs = require('fs');
 const path = require('path');
 
 const app = express();
 app.use(cors());
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// LOGGER CONFIG
+const logFormat = printf(({ level, message, label, timestamp }) => {
+  return `${timestamp} [${label}] ${level}: ${message}`;
+});
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: combine(
+    label({ label: 'LOG' }),
+    timestamp(),
+    logFormat
+  ),
+  defaultMeta: { service: 'user-service' },
+  transports: [
+    // error log
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    // exec log
+    new winston.transports.File({ filename: 'combined.log' }),
+   ],
+});
+
+function createLoggerContext() {
+    return {
+        log: (msg) => {
+            msg.split('\n').forEach(line => {
+                if (line.trim()) {
+                    logger.info(line.trim());
+                }
+            });
+        },
+
+        section: (title) => {
+            logger.info(`\n========== ${title} ==========\n`);
+        },
+
+        step: (msg) => {
+            logger.info(`→ ${msg}`);
+        },
+
+        match: (msg) => {
+            logger.info(`✔ ${msg}`);
+        },
+
+        error: (msg) => {
+            logger.info(`✖ ${msg}`);
+        },
+
+        divider: () => {
+            logger.info('----------------------------------------');
+        }
+    };
+}
 
 // CONFIG UPLOAD
 const uploadPath = path.join(__dirname, 'uploads');
@@ -81,20 +138,30 @@ app.post('/search', upload.array('files'), (req, res) => {
 
         const resultados = [];
 
+        // Limpa os logs anteriores antes de começar
+        fs.writeFileSync('combined.log', '');
+        fs.writeFileSync('error.log', '');
+
         for (const file of arquivosParaBuscar) {
             const text = fs.readFileSync(file.caminho, 'utf-8');
+
+            // Cria um logger por execução
+            const log = stepByStep ? createLoggerContext() : null;
+
+            if (stepByStep && log) {
+                log.section(`ARQUIVO: ${file.nome}`);
+            }
 
             // ================= NAIVE =================
             if (algorithm === 'naive') {
 
                 if (stepByStep) {
-                    const r = naiveSearchWithLogs(text, pattern);
+                    const r = naiveSearchWithLogs(text, pattern, log);
 
                     resultados.push({
                         arquivo: file.nome,
                         ocorrencias: r.matches.length,
                         posicoes: r.matches,
-                        steps: r.steps,
                         metrics: r.metrics
                     });
 
@@ -124,13 +191,12 @@ app.post('/search', upload.array('files'), (req, res) => {
             if (algorithm === 'rabin') {
 
                 if (stepByStep) {
-                    const r = rabinKarpSearchWithLogs(text, pattern);
+                    const r = rabinKarpSearchWithLogs(text, pattern, log);
 
                     resultados.push({
                         arquivo: file.nome,
                         ocorrencias: r.matches.length,
                         posicoes: r.matches,
-                        steps: r.steps,
                         metrics: r.metrics
                     });
 
@@ -160,13 +226,12 @@ app.post('/search', upload.array('files'), (req, res) => {
             if (algorithm === 'kmp') {
 
                 if (stepByStep) {
-                    const r = kmpSearchWithLogs(text, pattern);
+                    const r = kmpSearchWithLogs(text, pattern, log);
 
                     resultados.push({
                         arquivo: file.nome,
                         ocorrencias: r.matches.length,
                         posicoes: r.matches,
-                        steps: r.steps,
                         metrics: r.metrics
                     });
 
@@ -196,13 +261,12 @@ app.post('/search', upload.array('files'), (req, res) => {
             if (algorithm === 'boyer') {
 
                 if (stepByStep) {
-                    const r = boyerMooreSearchWithLogs(text, pattern);
+                    const r = boyerMooreSearchWithLogs(text, pattern, log);
 
                     resultados.push({
                         arquivo: file.nome,
                         ocorrencias: r.matches.length,
                         posicoes: r.matches,
-                        steps: r.steps,
                         metrics: r.metrics
                     });
 
@@ -270,60 +334,56 @@ function naiveSearch(text, pattern) {
 }
 
 // NAIVE PASSO A PASSO
-function naiveSearchWithLogs(text, pattern) {
+function naiveSearchWithLogs(text, pattern, log) {
     const result = [];
-    const steps = [];
-
     let comparisons = 0;
 
     const startTime = performance.now();
 
-    for (let i = 0; i <= text.length - pattern.length; i++) {
+    log.section('NAIVE SEARCH');
 
-        steps.push(`\n[SHIFT] i = ${i}`);
+    for (let i = 0; i <= text.length - pattern.length; i++) {
+        log.step(`[SHIFT] i = ${i}`);
 
         let j = 0;
 
         while (j < pattern.length) {
             comparisons++;
 
-            steps.push(
-                `Comparando text[${i + j}] = '${text[i + j]}' com pattern[${j}] = '${pattern[j]}'`
-            );
+            log.log(`Comparando text[${i + j}]='${text[i + j]}' com pattern[${j}]='${pattern[j]}'`);
 
             if (text[i + j] !== pattern[j]) {
-                steps.push(`Mismatch`);
+                log.error('Mismatch');
 
-                if (j != 0) {
-                    steps.push(`Voltando ao primeiro caractere de comparação`);   
-                    steps.push(`===================================================`);
-                } 
+                if (j !== 0) {
+                    log.step('Voltando ao início do padrão');
+                }
 
                 break;
             }
 
-            steps.push(`Match!`);
-            if (j != pattern.length - 1) {
-                steps.push(`Alterando caractere de comparação...`);
-                steps.push(`===================================================`);
-            }
-            
+            log.match('Match');
             j++;
         }
 
         if (j === pattern.length) {
-            steps.push(`Encontrado na posição ${i}`);
-            steps.push(`Buscando outra ocorrência...`);
-            steps.push(`===================================================`);
+            log.match(`Encontrado na posição ${i}`);
             result.push(i);
+            log.divider();
         }
     }
 
     const endTime = performance.now();
 
+    log.section('RESULTADO');
+    log.log(`
+Matches: ${result}
+Tempo: ${(endTime - startTime).toFixed(4)} ms
+Comparações: ${comparisons}
+`);
+
     return {
         matches: result,
-        steps,
         metrics: {
             comparisons,
             executionTime: (endTime - startTime).toFixed(4),
@@ -397,9 +457,8 @@ function rabinKarpSearch(text, pattern) {
     return { matches: result, comparisons };
 }
 
-function rabinKarpSearchWithLogs(text, pattern) {
+function rabinKarpSearchWithLogs(text, pattern, log) {
     const result = [];
-    const steps = [];
 
     const d = 256;
     const q = 101;
@@ -410,87 +469,75 @@ function rabinKarpSearchWithLogs(text, pattern) {
     let p = 0;
     let t = 0;
     let h = 1;
-
     let comparisons = 0;
 
     const startTime = performance.now();
 
-    steps.push(`Calculando h (d^(m-1) % q)`);
+    log.section('RABIN-KARP');
 
     for (let i = 0; i < m - 1; i++) {
         h = (h * d) % q;
     }
 
-    steps.push(`h = ${h}`);
-
-    steps.push(`Calculando hash inicial`);
+    log.log(`h = ${h}`);
 
     for (let i = 0; i < m; i++) {
         p = (d * p + pattern.charCodeAt(i)) % q;
         t = (d * t + text.charCodeAt(i)) % q;
     }
 
-    steps.push(`Hash pattern = ${p}`);
-    steps.push(`Hash inicial texto = ${t}`);
+    log.log(`Hash pattern = ${p}`);
+    log.log(`Hash texto = ${t}`);
 
     for (let i = 0; i <= n - m; i++) {
-
-        steps.push(`\n[SHIFT] i = ${i}`);
+        log.step(`[SHIFT] i = ${i}`);
 
         if (p === t) {
-            steps.push(`Match de Hash  -> verificando caracteres`);
+            log.match('Hash bateu, verificando caracteres');
 
             let match = true;
 
             for (let j = 0; j < m; j++) {
                 comparisons++;
 
-                steps.push(
-                    `Comparando text[${i + j}] = '${text[i + j]}' com pattern[${j}]`
-                );
-
                 if (text[i + j] !== pattern[j]) {
-                    steps.push(`Colisão de hash -> Falso positivo)`);
-                    steps.push(`==================================`);
+                    log.error('Falso positivo (colisão)');
                     match = false;
                     break;
                 }
             }
 
             if (match) {
-                steps.push(`Match confirmado na posição ${i}`);
-                steps.push(`Buscando outras ocorrências...`);
-                steps.push(`==================================`);
+                log.match(`Encontrado na posição ${i}`);
                 result.push(i);
             }
 
         } else {
-            steps.push(`Mismatch de Hash -> pula comparação`);
-            steps.push(`==================================`);
+            log.error('Hash diferente');
         }
 
         if (i < n - m) {
-            const oldHash = t;
+            const old = t;
 
             t = (d * (t - text.charCodeAt(i) * h) + text.charCodeAt(i + m)) % q;
-
             if (t < 0) t += q;
 
-            steps.push(`Rolling hash: de ${oldHash} para ${t}`);
+            log.log(`Rolling hash: ${old} -> ${t}`);
         }
+
+        log.divider();
     }
 
     const endTime = performance.now();
 
     return {
         matches: result,
-        steps,
         metrics: {
             comparisons,
             executionTime: (endTime - startTime).toFixed(4),
             textLength: n,
             patternLength: m,
-            complexity: "O(n + m) (médio)"
+            complexity: "O(n + m)"
         }
     };
 }
@@ -555,53 +602,52 @@ function kmpSearch(text, pattern) {
     return { matches: result, comparisons, lps };
 }
 
-function kmpSearchWithLogs(text, pattern) {
-    const steps = [];
+function kmpSearchWithLogs(text, pattern, log) {
     const result = [];
+    let comparisons = 0;
 
     const lps = buildLPS(pattern);
 
-    steps.push(`Tabela LPS: ${lps.join(", ")}`);
+    log.section('KMP');
+    log.log(`LPS: ${lps.join(', ')}`);
 
-    let i = 0;
-    let j = 0;
-    let comparisons = 0;
+    let i = 0, j = 0;
 
     const startTime = performance.now();
 
     while (i < text.length) {
         comparisons++;
 
-        steps.push(`Comparando text[${i}] = '${text[i]}' com pattern[${j}]`);
+        log.log(`Comparando text[${i}]='${text[i]}' com pattern[${j}]='${pattern[j]}'`);
 
         if (text[i] === pattern[j]) {
-            steps.push("Match");
-            i++;
-            j++;
+            log.match('Match');
+            i++; j++;
         }
 
         if (j === pattern.length) {
-            steps.push(`Encontrado na posição ${i - j}`);
+            log.match(`Encontrado na posição ${i - j}`);
             result.push(i - j);
             j = lps[j - 1];
         } else if (i < text.length && text[i] !== pattern[j]) {
-            steps.push("Mismatch");
+            log.error('Mismatch');
 
             if (j !== 0) {
-                const oldJ = j;
+                const old = j;
                 j = lps[j - 1];
-                steps.push(`Usando LPS: j ${oldJ} -> ${j}`);
+                log.step(`LPS: ${old} -> ${j}`);
             } else {
                 i++;
             }
         }
+
+        log.divider();
     }
 
     const endTime = performance.now();
 
     return {
         matches: result,
-        steps,
         metrics: {
             comparisons,
             executionTime: (endTime - startTime).toFixed(4),
@@ -656,59 +702,77 @@ function boyerMooreSearch(text, pattern) {
     return { matches: result, comparisons, badChar };
 }
 
-function boyerMooreSearchWithLogs(text, pattern) {
+function boyerMooreSearchWithLogs(text, pattern, log) {
     const result = [];
-    const steps = [];
 
     const badChar = buildBadCharTable(pattern);
-
-    steps.push(`Tabela Bad Character: ${JSON.stringify(badChar)}`);
 
     let shift = 0;
     let comparisons = 0;
 
     const startTime = performance.now();
 
+    log.section('BOYER-MOORE');
+    log.log(`Tabela Bad Character: ${JSON.stringify(badChar)}`);
+
     while (shift <= text.length - pattern.length) {
-        steps.push(`\n[SHIFT] ${shift}`);
+        log.step(`[SHIFT] ${shift}`);
 
         let j = pattern.length - 1;
 
         while (j >= 0) {
             comparisons++;
 
-            steps.push(
-                `Comparando text[${shift + j}] = '${text[shift + j]}' com pattern[${j}]`
+            log.log(
+                `Comparando text[${shift + j}]='${text[shift + j]}' com pattern[${j}]='${pattern[j]}'`
             );
 
             if (pattern[j] !== text[shift + j]) {
-                steps.push("Mismatch");
+                log.error('Mismatch');
                 break;
             }
 
+            log.match('Match');
             j--;
         }
 
         if (j < 0) {
-            steps.push(`Encontrado na posição ${shift}`);
+            log.match(`Encontrado na posição ${shift}`);
             result.push(shift);
 
-            shift += (shift + pattern.length < text.length)
+            const nextShift = (shift + pattern.length < text.length)
                 ? pattern.length - (badChar[text[shift + pattern.length]] ?? -1)
                 : 1;
-        } else {
-            const shiftAmount = Math.max(1, j - (badChar[text[shift + j]] ?? -1));
 
-            steps.push(`Deslocando ${shiftAmount}`);
+            log.step(`Deslocamento após match: ${nextShift}`);
+
+            shift += nextShift;
+
+        } else {
+            const badCharIndex = badChar[text[shift + j]] ?? -1;
+            const shiftAmount = Math.max(1, j - badCharIndex);
+
+            log.step(
+                `BadChar='${text[shift + j]}' | índice no pattern=${badCharIndex} | shift=${shiftAmount}`
+            );
+
             shift += shiftAmount;
         }
+
+        log.divider();
     }
 
     const endTime = performance.now();
 
+    log.section('RESULTADO');
+    log.log(`
+Matches: ${result}
+Tempo: ${(endTime - startTime).toFixed(4)} ms
+Comparações: ${comparisons}
+`);
+
     return {
         matches: result,
-        steps,
         metrics: {
             comparisons,
             executionTime: (endTime - startTime).toFixed(4),
