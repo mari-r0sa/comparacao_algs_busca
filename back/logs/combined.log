@@ -1,0 +1,50 @@
+2026-05-08T21:32:53.438Z [info] {"algorithm":"boyer-moore","executionTime":"0.0444","comparisons":10,"matches":1}
+2026-05-08T21:32:53.441Z [info] ========== exemplo1.txt ==========
+2026-05-08T21:32:53.441Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Tabela Bad Character: {\"D\":0,\"E\":1,\"F\":2}"}
+2026-05-08T21:32:53.442Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 0"}
+2026-05-08T21:32:53.442Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[2]='C' com pattern[2]='F'"}
+2026-05-08T21:32:53.442Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.442Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='C' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.443Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.443Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 3"}
+2026-05-08T21:32:53.443Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[5]='F' com pattern[2]='F'"}
+2026-05-08T21:32:53.444Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Match"}
+2026-05-08T21:32:53.444Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[4]='E' com pattern[1]='E'"}
+2026-05-08T21:32:53.444Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Match"}
+2026-05-08T21:32:53.444Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[3]='D' com pattern[0]='D'"}
+2026-05-08T21:32:53.445Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Match"}
+2026-05-08T21:32:53.445Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Encontrado na posição 3"}
+2026-05-08T21:32:53.445Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Deslocamento após match: 4"}
+2026-05-08T21:32:53.445Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.445Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 7"}
+2026-05-08T21:32:53.446Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[9]='J' com pattern[2]='F'"}
+2026-05-08T21:32:53.446Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.447Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='J' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.447Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.447Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 10"}
+2026-05-08T21:32:53.447Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[12]='M' com pattern[2]='F'"}
+2026-05-08T21:32:53.448Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.448Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='M' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.448Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.448Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 13"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[15]='P' com pattern[2]='F'"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='P' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 16"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[18]='S' com pattern[2]='F'"}
+2026-05-08T21:32:53.449Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.450Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='S' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.450Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.450Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 19"}
+2026-05-08T21:32:53.450Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[21]='V' com pattern[2]='F'"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='V' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"[SHIFT] 22"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Comparando text[24]='Y' com pattern[2]='F'"}
+2026-05-08T21:32:53.451Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"Mismatch"}
+2026-05-08T21:32:53.452Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"BadChar='Y' | índice=-1 | shift=3"}
+2026-05-08T21:32:53.452Z [info] {"file":"exemplo1.txt","algorithm":"boyer","step":"----------------"}
+2026-05-08T21:32:53.452Z [info] ====================================
+2026-05-08T21:32:53.452Z [info] {"algorithm":"boyer","pattern":"DEF","totalFiles":1}
