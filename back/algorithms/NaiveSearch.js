@@ -66,8 +66,7 @@ class NaiveSearch extends SearchStrategy {
             }
         }
 
-        const executionTime =
-            (performance.now() - startTime).toFixed(4);
+        const executionTime = (performance.now() - startTime).toFixed(4);
 
         updateMetrics(
             'naive',

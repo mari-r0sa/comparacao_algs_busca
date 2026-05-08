@@ -24,10 +24,6 @@ class RabinKarpSearch extends SearchStrategy {
 
         const startTime = performance.now();
 
-        if (stepByStep) {
-            steps.push('=== RABIN-KARP ===');
-        }
-
         // h = pow(d, m-1) % q
         for (let i = 0; i < m - 1; i++) {
             h = (h * d) % q;
