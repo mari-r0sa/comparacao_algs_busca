@@ -28,6 +28,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const frontPath = path.join(__dirname, '..', 'front');
+
+app.use(express.static(frontPath));
+
+app.get('/', (_, res) => {
+    res.sendFile(path.join(frontPath, 'index.html'));
+});
+
 const logger = require('./observability/logger');   
 
 

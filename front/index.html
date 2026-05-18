@@ -1,135 +1,578 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Busca de Algoritmos</title>
-    <link rel="stylesheet" href="index.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparação de Algoritmos</title>
+    <link rel="stylesheet" href="./index.css" />
 </head>
 <body>
+    <header class="topbar">
+        <h1 class="topbar-title">Comparação de Algoritmos</h1>
+    </header>
 
-    <div class="addArquivos">
-        <input id="fileInput" type="file" multiple />
-        <button type="button" id="uploadButton">Adicionar arquivo(s)</button>
-        <p id="uploadStatus"></p>
-    </div>
+    <main class="page">
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Painel de execução e comparação dos algoritmos</h1>
+                <p>
+                    Interface para executar buscas com Naive, Rabin-Karp, KMP e Boyer-Moore,
+                    analisar métricas, visualizar resultados por arquivo e comparar o desempenho prático.
+                </p>
+            </div>
+        </section>
 
-    <div class="search">
-        <select id="selectAlg">
-            <option value="naive">Naive</option>
-            <option value="kmp">KMP</option>
-            <option value="rabin">Rabin-Karp</option>
-            <option value="boyer">Boyer-Moore</option>
-        </select>
+        <section class="dashboard">
+            <form id="searchForm" class="panel form-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Executar busca</h2>
+                        <p>Preencha os dados abaixo e envie a requisição para o backend.</p>
+                    </div>
+                </div>
 
-        <input id="searchInput" type="text" placeholder="Buscar...">
+                <div class="form-grid">
+                    <label class="field field-full">
+                        <span>Arquivo(s) para análise</span>
+                        <input id="files" type="file" name="files" multiple />
+                        <small>
+                            Se nenhum arquivo for selecionado, o backend usa automaticamente os arquivos da pasta
+                            <strong>back/uploads</strong>.
+                        </small>
+                    </label>
 
-        <button type="button" id="searchButton">Executar</button>
-        <button type="button" id="stepButton">Passo a passo</button>
-    </div>
+                    <label class="field">
+                        <span>Padrão de busca</span>
+                        <input id="pattern" type="text" name="pattern" placeholder="Ex.: algoritmo, texto, busca..." required />
+                    </label>
+
+                    <label class="field">
+                        <span>Algoritmo</span>
+                        <select id="algorithm" name="algorithm">
+                            <option value="naive">Naive Search</option>
+                            <option value="rabin">Rabin-Karp</option>
+                            <option value="kmp">KMP</option>
+                            <option value="boyer">Boyer-Moore</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="check-row">
+                    <input id="stepByStep" type="checkbox" name="stepByStep" />
+                    <span>Gerar passo a passo da execução</span>
+                </label>
+
+                <div class="actions">
+                    <button type="submit">Executar algoritmo</button>
+                    <button type="button" id="compareBtn" class="secondary">Comparar todos</button>
+                    <button type="button" id="metricsBtn" class="ghost">Atualizar métricas</button>
+                </div>
+
+                <div id="message" class="message hidden"></div>
+            </form>
+
+            <aside class="panel stats-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Resumo</h2>
+                        <p>Indicadores rápidos da última execução.</p>
+                    </div>
+                </div>
+
+                <div id="summaryCards" class="cards">
+                    <article>
+                        <span>Execuções</span>
+                        <strong>0</strong>
+                    </article>
+                    <article>
+                        <span>Ocorrências</span>
+                        <strong>0</strong>
+                    </article>
+                    <article>
+                        <span>Comparações</span>
+                        <strong>0</strong>
+                    </article>
+                    <article>
+                        <span>Tempo total</span>
+                        <strong>0 ms</strong>
+                    </article>
+                </div>
+
+                <div class="chart-wrap">
+                    <div class="chart-header">
+                        <h3>Tempo por algoritmo</h3>
+                    </div>
+                    <div id="chart" class="chart empty">Execute uma busca para visualizar o gráfico.</div>
+                </div>
+
+                <div class="algorithm-comparison">
+                    <h3>Comparativo dos algoritmos</h3>
+                    <div id="algorithmComparison" class="comparison-list empty">
+                        Execute uma comparação para visualizar o resumo por algoritmo.
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Resultados da busca</h2>
+                    <p>Resumo por arquivo processado e algoritmo utilizado.</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Algoritmo</th>
+                            <th>Arquivo</th>
+                            <th>Ocorrências</th>
+                            <th>Posições</th>
+                            <th>Comparações</th>
+                            <th>Tempo</th>
+                            <th>Complexidade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr>
+                            <td colspan="7" class="empty-cell">Nenhuma busca executada ainda.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bottom-grid">
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Métricas do servidor</h2>
+                        <p>Resposta do endpoint <code>/metrics</code>.</p>
+                    </div>
+                </div>
+                <pre id="serverMetrics" class="code-box">Clique em “Atualizar métricas”.</pre>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Passo a passo</h2>
+                        <p>Exibido quando a opção “Gerar passo a passo” estiver habilitada.</p>
+                    </div>
+                </div>
+                <pre id="stepsBox" class="code-box">Nenhum passo registrado.</pre>
+            </section>
+        </section>
+    </main>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const uploadButton = document.getElementById('uploadButton');
-        const uploadStatus = document.getElementById('uploadStatus');
-        const searchButton = document.getElementById('searchButton');
-        const searchInput = document.getElementById('searchInput');
-        const selectAlg = document.getElementById('selectAlg');
-        const stepButton = document.getElementById('stepButton');
-        
-        let storedFiles = [];
+        const API_URL = 'http://localhost:3000';
 
-        // UPLOAD
-        uploadButton.addEventListener('click', (event) => {
+        const algorithmLabels = {
+            naive: 'Naive Search',
+            rabin: 'Rabin-Karp',
+            kmp: 'KMP',
+            boyer: 'Boyer-Moore'
+        };
+
+        const algorithms = Object.keys(algorithmLabels);
+
+        const form = document.getElementById('searchForm');
+        const filesInput = document.getElementById('files');
+        const patternInput = document.getElementById('pattern');
+        const algorithmInput = document.getElementById('algorithm');
+        const stepByStepInput = document.getElementById('stepByStep');
+        const compareBtn = document.getElementById('compareBtn');
+        const metricsBtn = document.getElementById('metricsBtn');
+        const messageBox = document.getElementById('message');
+        const resultsBody = document.getElementById('resultsBody');
+        const summaryCards = document.getElementById('summaryCards');
+        const chart = document.getElementById('chart');
+        const algorithmComparison = document.getElementById('algorithmComparison');
+        const serverMetrics = document.getElementById('serverMetrics');
+        const stepsBox = document.getElementById('stepsBox');
+
+        let latestRows = [];
+
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
-
-            const files = fileInput.files;
-
-            if (!files.length) {
-                uploadStatus.textContent = 'Selecione arquivos';
-                return;
-            }
-
-            storedFiles = Array.from(files);
-
-            uploadStatus.textContent = `${storedFiles.length} arquivo(s) carregado(s)`;
-        });
-
-        // SEARCH
-        searchButton.addEventListener('click', (event) => {
-            event.preventDefault();
-            executarBusca(false);
-        });
-
-        stepButton.addEventListener('click', (event) => {
-            event.preventDefault();
-            executarBusca(true);
-        });
-
-        async function executarBusca(stepByStep) {
-            const pattern = searchInput.value;
-            const algorithm = selectAlg.value;
-
-            if (!pattern) {
-                uploadStatus.textContent = 'Digite algo para buscar';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('pattern', pattern);
-            formData.append('algorithm', algorithm);
-            formData.append('stepByStep', stepByStep);
-
-            if (storedFiles.length > 0) {
-                for (const file of storedFiles) {
-                    formData.append('files', file);
-                }
-            }
-
-            uploadStatus.textContent = stepByStep ? 'Executando passo a passo...' : 'Executando...';
 
             try {
-                const response = await fetch('http://localhost:3000/search', {
-                    method: 'POST',
-                    body: formData
-                });
+                setLoading(true);
+                showMessage('Executando busca...', 'info');
 
-                const data = await response.json();
+                const data = await executeSearch(algorithmInput.value);
+                latestRows = normalizeResults(data);
 
-                let output = "Log de execução\n\n";
+                filesInput.value = '';
 
-                if (!data.resultados) {
-                    uploadStatus.innerText = JSON.stringify(data, null, 2);
-                    return;
+                renderResults(latestRows);
+                renderSummary(latestRows);
+                renderChart(latestRows);
+                renderAlgorithmComparison(latestRows);
+                renderSteps(latestRows);
+                await loadServerMetrics(false);
+
+                showMessage('Busca executada com sucesso.', 'success');
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        compareBtn.addEventListener('click', async () => {
+            if (!patternInput.value.trim()) {
+                showMessage('Informe o padrão de busca antes de comparar os algoritmos.', 'error');
+                patternInput.focus();
+                return;
+            }
+
+            try {
+                setLoading(true);
+                showMessage('Comparando todos os algoritmos...', 'info');
+
+                const allRows = [];
+
+                for (const algorithm of algorithms) {
+                    const data = await executeSearch(algorithm);
+                    allRows.push(...normalizeResults(data));
                 }
 
-                data.resultados.forEach(r => {
-                    output += `\n- Arquivo: ${r.arquivo}\n`;
-                    output += `Ocorrências: ${r.ocorrencias}\n`;
-                    output += `Posições: ${r.posicoes.length ? r.posicoes.join(", ") : "Nenhuma ocorrência encontrada"}\n`;
-                    output += `Comparações: ${r.metrics.comparisons}\n`;
+                latestRows = allRows;
 
-                    output += `\n- Métricas:\n`;
-                    output += `Tempo: ${r.metrics.executionTime} ms\n`;
-                    output += `Texto: ${r.metrics.textLength}\n`;
-                    output += `Padrão: ${r.metrics.patternLength}\n`;
-                    output += `Complexidade: ${r.metrics.complexity}\n`;
+                filesInput.value = '';
 
-                    if (stepByStep && r.steps) {
-                        output += `\n- Passo a passo:\n`;
-                        output += r.steps.join("\n");
-                    }
+                renderResults(latestRows);
+                renderSummary(latestRows);
+                renderChart(latestRows);
+                renderAlgorithmComparison(latestRows);
+                renderSteps(latestRows);
+                await loadServerMetrics(false);
 
-                    output += `\n\n============================================\n`;
-                });
-
-                uploadStatus.innerText = output;
-
+                showMessage('Comparação concluída com sucesso.', 'success');
             } catch (error) {
-                console.error(error);
-                uploadStatus.textContent = 'Erro na busca';
+                showMessage(error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        metricsBtn.addEventListener('click', async () => {
+            try {
+                setLoading(true);
+                await loadServerMetrics(true);
+            } catch (error) {
+                showMessage(error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function buildFormData(algorithm) {
+            const formData = new FormData();
+
+            formData.append('pattern', patternInput.value.trim());
+            formData.append('algorithm', algorithm);
+            formData.append('stepByStep', stepByStepInput.checked ? 'true' : 'false');
+
+            Array.from(filesInput.files).forEach(file => {
+                formData.append('files', file);
+            });
+
+            return formData;
+        }
+
+        async function executeSearch(algorithm) {
+            const response = await fetch(`${API_URL}/search`, {
+                method: 'POST',
+                body: buildFormData(algorithm)
+            });
+
+            let data = {};
+
+            try {
+                data = await response.json();
+            } catch (error) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao executar a busca.');
+            }
+
+            return data;
+        }
+
+        async function loadServerMetrics(showSuccessMessage = true) {
+            const response = await fetch(`${API_URL}/metrics`);
+
+            let data = {};
+
+            try {
+                data = await response.json();
+            } catch (error) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao carregar métricas.');
+            }
+
+            serverMetrics.textContent = JSON.stringify(data, null, 2);
+
+            if (showSuccessMessage) {
+                showMessage('Métricas atualizadas.', 'success');
             }
         }
-    </script>
 
+        function normalizeResults(data) {
+            return (data.resultados || []).map(result => ({
+                algorithm: data.algorithm,
+                algorithmLabel: algorithmLabels[data.algorithm] || data.algorithm,
+                arquivo: result.arquivo,
+                ocorrencias: Number(result.ocorrencias || 0),
+                posicoes: result.posicoes || [],
+                metrics: result.metrics || {},
+                steps: result.steps || []
+            }));
+        }
+
+        function renderResults(rows) {
+            if (!rows.length) {
+                resultsBody.innerHTML = '<tr><td colspan="7" class="empty-cell">Nenhum resultado encontrado.</td></tr>';
+                return;
+            }
+
+            resultsBody.innerHTML = rows.map(row => {
+                const positions = row.posicoes.length
+                    ? row.posicoes.slice(0, 12).join(', ') + (row.posicoes.length > 12 ? '...' : '')
+                    : '—';
+
+                return `
+                    <tr>
+                        <td><span class="badge">${row.algorithmLabel}</span></td>
+                        <td>${escapeHtml(row.arquivo)}</td>
+                        <td>${row.ocorrencias}</td>
+                        <td>${positions}</td>
+                        <td>${formatNumber(row.metrics.comparisons)}</td>
+                        <td>${formatMs(row.metrics.executionTime)}</td>
+                        <td>${escapeHtml(row.metrics.complexity || '—')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderSummary(rows) {
+            const executions = rows.length;
+            const occurrences = rows.reduce((sum, row) => sum + row.ocorrencias, 0);
+            const comparisons = rows.reduce((sum, row) => sum + Number(row.metrics.comparisons || 0), 0);
+            const totalTime = rows.reduce((sum, row) => sum + Number(row.metrics.executionTime || 0), 0);
+
+            summaryCards.innerHTML = `
+                <article>
+                    <span>Execuções</span>
+                    <strong>${executions}</strong>
+                </article>
+                <article>
+                    <span>Ocorrências</span>
+                    <strong>${occurrences}</strong>
+                </article>
+                <article>
+                    <span>Comparações</span>
+                    <strong>${formatNumber(comparisons)}</strong>
+                </article>
+                <article>
+                    <span>Tempo total</span>
+                    <strong>${totalTime.toFixed(4)} ms</strong>
+                </article>
+            `;
+        }
+
+        function renderChart(rows) {
+            const grouped = {};
+
+            rows.forEach(row => {
+                if (!grouped[row.algorithm]) {
+                    grouped[row.algorithm] = {
+                        label: row.algorithmLabel,
+                        time: 0,
+                        executions: 0,
+                        comparisons: 0
+                    };
+                }
+
+                grouped[row.algorithm].time += Number(row.metrics.executionTime || 0);
+                grouped[row.algorithm].executions += 1;
+                grouped[row.algorithm].comparisons += Number(row.metrics.comparisons || 0);
+            });
+
+            const data = Object.values(grouped);
+            const maxTime = Math.max(...data.map(item => item.time), 0);
+
+            if (!data.length || maxTime === 0) {
+                chart.className = 'chart empty';
+                chart.textContent = 'Execute uma busca para visualizar o gráfico.';
+                return;
+            }
+
+            chart.className = 'chart';
+            chart.innerHTML = data.map(item => {
+                const width = Math.max((item.time / maxTime) * 100, 4);
+
+                return `
+                    <div class="bar-row">
+                        <div class="bar-info">
+                            <strong>${item.label}</strong>
+                            <small>${item.executions} execução(ões) • ${formatNumber(item.comparisons)} comparações</small>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar" style="width: ${width}%"></div>
+                        </div>
+                        <span class="bar-time">${item.time.toFixed(4)} ms</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAlgorithmComparison(rows) {
+            if (!rows.length) {
+                algorithmComparison.className = 'comparison-list empty';
+                algorithmComparison.textContent = 'Execute uma comparação para visualizar o resumo por algoritmo.';
+                return;
+            }
+
+            const grouped = {};
+
+            rows.forEach(row => {
+                if (!grouped[row.algorithm]) {
+                    grouped[row.algorithm] = {
+                        algorithm: row.algorithm,
+                        label: row.algorithmLabel,
+                        executions: 0,
+                        occurrences: 0,
+                        comparisons: 0,
+                        totalTime: 0
+                    };
+                }
+
+                grouped[row.algorithm].executions += 1;
+                grouped[row.algorithm].occurrences += Number(row.ocorrencias || 0);
+                grouped[row.algorithm].comparisons += Number(row.metrics.comparisons || 0);
+                grouped[row.algorithm].totalTime += Number(row.metrics.executionTime || 0);
+            });
+
+            const data = Object.values(grouped).map(item => ({
+                ...item,
+                averageTime: item.executions ? item.totalTime / item.executions : 0,
+                averageComparisons: item.executions ? item.comparisons / item.executions : 0
+            }));
+
+            const fastest = data.reduce((best, item) => {
+                return item.averageTime < best.averageTime ? item : best;
+            }, data[0]);
+
+            const fewerComparisons = data.reduce((best, item) => {
+                return item.averageComparisons < best.averageComparisons ? item : best;
+            }, data[0]);
+
+            algorithmComparison.className = 'comparison-list';
+
+            algorithmComparison.innerHTML = data.map(item => {
+                const isFastest = item.algorithm === fastest.algorithm;
+                const isFewerComparisons = item.algorithm === fewerComparisons.algorithm;
+
+                return `
+                    <article class="comparison-card">
+                        <div class="comparison-title">
+                            <strong>${item.label}</strong>
+                            ${isFastest ? '<span class="winner">Mais rápido</span>' : ''}
+                            ${isFewerComparisons ? '<span class="winner gray">Menos comparações</span>' : ''}
+                        </div>
+
+                        <div class="comparison-metrics">
+                            <div>
+                                <span>Execuções</span>
+                                <strong>${item.executions}</strong>
+                            </div>
+
+                            <div>
+                                <span>Ocorrências</span>
+                                <strong>${item.occurrences}</strong>
+                            </div>
+
+                            <div>
+                                <span>Comparações</span>
+                                <strong>${formatNumber(item.comparisons)}</strong>
+                            </div>
+
+                            <div>
+                                <span>Tempo total</span>
+                                <strong>${item.totalTime.toFixed(4)} ms</strong>
+                            </div>
+
+                            <div>
+                                <span>Tempo médio</span>
+                                <strong>${item.averageTime.toFixed(4)} ms</strong>
+                            </div>
+
+                            <div>
+                                <span>Média de comparações</span>
+                                <strong>${formatNumber(Math.round(item.averageComparisons))}</strong>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderSteps(rows) {
+            const allSteps = [];
+
+            rows.forEach(row => {
+                if (row.steps && row.steps.length) {
+                    allSteps.push(`Arquivo: ${row.arquivo}`);
+                    allSteps.push(`Algoritmo: ${row.algorithmLabel}`);
+                    allSteps.push(...row.steps.slice(0, 180));
+                    allSteps.push('='.repeat(60));
+                }
+            });
+
+            stepsBox.textContent = allSteps.length
+                ? allSteps.join('\n')
+                : 'Nenhum passo registrado.';
+        }
+
+        function showMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.className = `message ${type}`;
+        }
+
+        function setLoading(isLoading) {
+            form.querySelectorAll('button').forEach(button => {
+                button.disabled = isLoading;
+            });
+        }
+
+        function formatMs(value) {
+            const number = Number(value || 0);
+            return `${number.toFixed(4)} ms`;
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString('pt-BR');
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+    </script>
 </body>
 </html>
